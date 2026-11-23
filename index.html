@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexusERP — Gestão Empresarial | Dashboard Executivo</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Chart.js & DataLabels Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+
+    <!-- Configuração Customizada do Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            850: '#172033',
+                            900: '#0F172A',
+                            950: '#090D16',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Ajustes finos de barra de rolagem e transições */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8FAFC;
+            color: #1E293B;
+            overflow-x: hidden;
+        }
+
+        /* Scrollbar personalizada */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F1F5F9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94A3B8;
+        }
+
+        /* Container responsivo de gráficos */
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 270px;
+        }
+        .chart-wrapper-gauge {
+            position: relative;
+            width: 100%;
+            height: 235px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Efeito suave nos cards */
+        .kpi-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-indigo-100 selection:text-indigo-900">
+
+    <!-- Overlay para menu mobile -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-30 hidden lg:hidden transition-opacity" onclick="toggleSidebar()"></div>
+
+    <!-- Layout Principal -->
+    <div class="min-h-screen flex">
+
+        <!-- ===================================================================== -->
+        <!-- MENU LATERAL (SIDEBAR)                                                -->
+        <!-- ===================================================================== -->
+        <aside id="sidebar" class="fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-slate-900 text-slate-300 flex flex-col transition-transform duration-300 -translate-x-full lg:translate-x-0 border-r border-slate-800 shrink-0">
+            
+            <!-- Logo do Sistema -->
+            <div class="h-16 flex items-center justify-between px-6 border-b border-slate-800/80">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+                        <i class="fa-solid fa-layer-group text-base"></i>
+                    </div>
+                    <div>
+                        <span class="text-white font-bold text-lg tracking-tight block leading-none">Nexus<span class="text-indigo-400">ERP</span></span>
+                        <span class="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Gestão Pro</span>
+                    </div>
+                </div>
+                <button class="lg:hidden text-slate-400 hover:text-white p-1" onclick="toggleSidebar()" aria-label="Fechar Menu">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Navegação Principal -->
+            <div class="flex-1 overflow-y-auto py-5 px-3 space-y-6">
+                <div>
+                    <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">Menu Principal</p>
+                    <nav class="space-y-1" id="sidebarNav">
+                        <a href="#dashboard" onclick="setActiveNav(this, 'Visão Geral Executiva')" class="nav-item active flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-indigo-600/15 text-indigo-400 font-semibold border border-indigo-500/20 transition-all">
+                            <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+                            <span class="text-sm">Dashboard</span>
+                        </a>
+                        <a href="#vendas" onclick="setActiveNav(this, 'Gestão de Vendas')" class="nav-item flex items-center justify-between px-3.5 py-2.5 rounded-xl text-slate-300 hover:bg-slate-800/70 hover:text-white transition-all">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-cart-shopping w-5 text-center text-slate-400"></i>
+                                <span class="text-sm font-medium">Vendas</span>
+                            </div>
+                            <span class="text-[11px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-semibold">+18%</span>
+                        </a>
+                        <a href="#clientes" onclick="setActiveNav(this, 'Carteira de Clientes')" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-300 hover:bg-slate-800/70 hover:text-white transition-all">
+                            <i class="fa-solid fa-users w-5 text-center text-slate-400"></i>
+                            <span class="text-sm font-medium">Clientes</span>
+                        </a>
+                        <a href="#financeiro" onclick="setActiveNav(this, 'Controle Financeiro')" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-300 hover:bg-slate-800/70 hover:text-white transition-all">
+                            <i class="fa-solid fa-wallet w-5 text-center text-slate-400"></i>
+                            <span class="text-sm font-medium">Financeiro</span>
+                        </a>
+                        <a href="#estoque" onclick="setActiveNav(this, 'Controle de Estoque')" class="nav-item flex items-center justify-between px-3.5 py-2.5 rounded-xl text-slate-300 hover:bg-slate-800/70 hover:text-white transition-all">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-boxes-stacked w-5 text-center text-slate-400"></i>
+                                <span class="text-sm font-medium">Estoque</span>
+                            </div>
+                            <span class="text-[11px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-semibold">4 alertas</span>
+                        </a>
+                    </nav>
+                </div>
+
+                <div>
+                    <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">Corporativo</p>
+                    <nav class="space-y-1">
+                        <a href="#equipe" onclick="setActiveNav(this, 'Recursos Humanos & Equipe')" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-300 hover:bg-slate-800/70 hover:text-white transition-all">
+                            <i class="fa-solid fa-id-badge w-5 text-center text-slate-400"></i>
+                            <span class="text-sm font-medium">Equipe</span>
+                        </a>
+                        <a href="#relatorios" onclick="setActiveNav(this, 'Relatórios Gerenciais')" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-300 hover:bg-slate-800/70 hover:text-white transition-all">
+                            <i class="fa-solid fa-file-invoice-dollar w-5 text-center text-slate-400"></i>
+                            <span class="text-sm font-medium">Relatórios</span>
+                        </a>
+                        <a href="#configuracoes" onclick="setActiveNav(this, 'Configurações do Sistema')" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-300 hover:bg-slate-800/70 hover:text-white transition-all">
+                            <i class="fa-solid fa-gear w-5 text-center text-slate-400"></i>
+                            <span class="text-sm font-medium">Configurações</span>
+                        </a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Card de Status do Plano / Sistema -->
+            <div class="p-4 border-t border-slate-800/80">
+                <div class="bg-slate-850 rounded-xl p-3.5 border border-slate-800">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs font-semibold text-white">Meta Anual 2026</span>
+                        <span id="sidebarMetaBadge" class="text-xs font-bold text-emerald-400">84,5%</span>
+                    </div>
+                    <div class="w-full bg-slate-700/70 rounded-full h-1.5 mb-2">
+                        <div id="sidebarMetaBar" class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-1.5 rounded-full transition-all duration-500" style="width: 84.5%"></div>
+                    </div>
+                    <p class="text-[11px] text-slate-400">Sincronizado em tempo real</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ===================================================================== -->
+        <!-- ÁREA DE CONTEÚDO PRINCIPAL (HEADER + DASHBOARD)                       -->
+        <!-- ===================================================================== -->
+        <div class="flex-1 flex flex-col min-w-0">
+
+            <!-- CABEÇALHO (HEADER) -->
+            <header class="sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+                
+                <!-- Esquerda: Botão Mobile + Nome do Sistema / Breadcrumb -->
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 focus:outline-none" aria-label="Abrir Menu">
+                        <i class="fa-solid fa-bars text-lg"></i>
+                    </button>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-base sm:text-lg font-bold text-slate-900 tracking-tight">NexusERP — Gestão Empresarial</h1>
+                            <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                Enterprise
+                            </span>
+                        </div>
+                        <p id="pageSubtitle" class="text-xs text-slate-500 hidden sm:block">Painel Executivo de Indicadores e Performance</p>
+                    </div>
+                </div>
+
+                <!-- Direita: Busca, Filtro de Período, Notificações e Perfil -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    
+                    <!-- Barra de Busca (Desktop) -->
+                    <div class="relative hidden xl:block w-64">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="globalSearch" onkeyup="filterTransactionsTable()" placeholder="Buscar transação ou cliente..." class="w-full pl-9 pr-4 py-2 text-xs bg-slate-100/80 border border-slate-200 rounded-xl text-slate-700 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all">
+                    </div>
+
+                    <!-- Filtro por Período Interativo -->
+                    <div class="relative flex items-center">
+                        <i class="fa-regular fa-calendar text-indigo-600 text-xs absolute left-3 pointer-events-none"></i>
+                        <select id="periodFilter" onchange="updateDashboardPeriod(this.value)" aria-label="Filtrar por período" class="appearance-none bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl pl-8 pr-8 py-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all">
+                            <option value="30d" selected>Últimos 30 dias</option>
+                            <option value="quarter">Este Trimestre</option>
+                            <option value="year">Este Ano (2026)</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down text-slate-400 text-[10px] absolute right-3 pointer-events-none"></i>
+                    </div>
+
+                    <!-- Notificações com Badge e Dropdown -->
+                    <div class="relative">
+                        <button id="notifButton" onclick="toggleNotifications()" class="relative p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/30" aria-label="Notificações">
+                            <i class="fa-regular fa-bell text-sm"></i>
+                            <span id="notifBadge" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center shadow-xs">3</span>
+                        </button>
+
+                        <!-- Dropdown de Notificações -->
+                        <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-slate-200/90 z-50 overflow-hidden">
+                            <div class="px-4 py-3 bg-slate-50 border-b border-slate-200/80 flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-800">Central de Notificações</span>
+                                <button onclick="markAllNotificationsRead()" class="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800">Marcar como lidas</button>
+                            </div>
+                            <div id="notifList" class="divide-y divide-slate-100 max-h-72 overflow-y-auto">
+                                <div class="p-3.5 hover:bg-slate-50 transition-colors flex gap-3 items-start">
+                                    <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                                        <i class="fa-solid fa-trophy text-xs"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-xs font-semibold text-slate-800">Meta de Vendas Superada!</p>
+                                        <p class="text-[11px] text-slate-500 mt-0.5">A equipe comercial atingiu 104% da meta semanal prevista.</p>
+                                        <span class="text-[10px] text-slate-400 mt-1 block">Há 14 minutos</span>
+                                    </div>
+                                    <span class="w-2 h-2 rounded-full bg-indigo-500 mt-1.5 unread-dot"></span>
+                                </div>
+                                <div class="p-3.5 hover:bg-slate-50 transition-colors flex gap-3 items-start">
+                                    <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 mt-0.5">
+                                        <i class="fa-solid fa-triangle-exclamation text-xs"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-xs font-semibold text-slate-800">Estoque Mínimo Atingido</p>
+                                        <p class="text-[11px] text-slate-500 mt-0.5">SKU #4092 (Servidor Rack Dell) restam apenas 3 unidades.</p>
+                                        <span class="text-[10px] text-slate-400 mt-1 block">Há 1 hora</span>
+                                    </div>
+                                    <span class="w-2 h-2 rounded-full bg-indigo-500 mt-1.5 unread-dot"></span>
+                                </div>
+                                <div class="p-3.5 hover:bg-slate-50 transition-colors flex gap-3 items-start">
+                                    <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+                                        <i class="fa-solid fa-file-circle-check text-xs"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-xs font-semibold text-slate-800">Fechamento Fiscal Concluído</p>
+                                        <p class="text-[11px] text-slate-500 mt-0.5">DRE consolidado disponível para auditoria da diretoria.</p>
+                                        <span class="text-[10px] text-slate-400 mt-1 block">Hoje às 08:30</span>
+                                    </div>
+                                    <span class="w-2 h-2 rounded-full bg-indigo-500 mt-1.5 unread-dot"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Identificação / Avatar do Usuário Administrador -->
+                    <div class="flex items-center gap-2.5 pl-2 sm:pl-3 border-l border-slate-200">
+                        <img src="https://ui-avatars.com/api/?name=Ricardo+Mendes&background=4F46E5&color=fff&bold=true" alt="Avatar Ricardo Mendes" onerror="this.src='https://placehold.co/40x40/4F46E5/FFFFFF?text=RM'" class="w-9 h-9 rounded-xl object-cover border border-indigo-200 shadow-xs">
+                        <div class="hidden md:block leading-tight">
+                            <p class="text-xs font-bold text-slate-800">Ricardo Mendes</p>
+                            <p class="text-[11px] text-slate-500 font-medium">Diretor Administrador</p>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- ================================================================= -->
+            <!-- CORPO DA DASHBOARD                                                -->
+            <!-- ================================================================= -->
+            <main class="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto space-y-6">
+
+                <!-- Barra de Contexto e Exportação -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">Visão Geral de Resultados</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Acompanhe os indicadores financeiros, operacionais e comerciais em tempo real.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="periodBadge" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white border border-slate-200 text-slate-600 shadow-2xs">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Período: <strong class="text-slate-800">Últimos 30 dias</strong>
+                        </span>
+                        <button onclick="exportSummaryToast()" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-all cursor-pointer">
+                            <i class="fa-solid fa-download"></i>
+                            <span>Exportar Relatório</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ============================================================= -->
+                <!-- 1. CARDS DE INDICADORES (KPIs) - GRID DE 6 CARDS              -->
+                <!-- ============================================================= -->
+                <section aria-label="Indicadores Principais" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                    
+                    <!-- KPI 1: Total de Clientes -->
+                    <div class="kpi-card bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-500">Total de Clientes</span>
+                            <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                                <i class="fa-solid fa-users text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h3 id="kpiClientes" class="text-2xl font-extrabold text-slate-900 tracking-tight">2.845</h3>
+                            <div class="flex items-center gap-1.5 mt-1.5">
+                                <span id="kpiClientesTrend" class="inline-flex items-center gap-0.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md">
+                                    <i class="fa-solid fa-arrow-trend-up text-[9px]"></i> +12,4%
+                                </span>
+                                <span class="text-[11px] text-slate-400">vs. anterior</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI 2: Total de Funcionários -->
+                    <div class="kpi-card bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-500">Total de Funcionários</span>
+                            <div class="w-9 h-9 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
+                                <i class="fa-solid fa-user-tie text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h3 id="kpiFuncionarios" class="text-2xl font-extrabold text-slate-900 tracking-tight">148</h3>
+                            <div class="flex items-center gap-1.5 mt-1.5">
+                                <span id="kpiFuncionariosTrend" class="inline-flex items-center gap-0.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md">
+                                    <i class="fa-solid fa-plus text-[9px]"></i> 6 novos
+                                </span>
+                                <span class="text-[11px] text-slate-400">ativos</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI 3: Total de Vendas -->
+                    <div class="kpi-card bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-500">Total de Vendas</span>
+                            <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                <i class="fa-solid fa-bag-shopping text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h3 id="kpiVendas" class="text-2xl font-extrabold text-slate-900 tracking-tight">1.420</h3>
+                            <div class="flex items-center gap-1.5 mt-1.5">
+                                <span id="kpiVendasTrend" class="inline-flex items-center gap-0.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md">
+                                    <i class="fa-solid fa-arrow-trend-up text-[9px]"></i> +18,2%
+                                </span>
+                                <span class="text-[11px] text-slate-400">pedidos</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI 4: Receita Total -->
+                    <div class="kpi-card bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-500">Receita Total</span>
+                            <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                <i class="fa-solid fa-sack-dollar text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h3 id="kpiReceita" class="text-xl xl:text-lg 2xl:text-xl font-extrabold text-slate-900 tracking-tight">R$ 485.900</h3>
+                            <div class="flex items-center gap-1.5 mt-1.5">
+                                <span id="kpiReceitaTrend" class="inline-flex items-center gap-0.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md">
+                                    <i class="fa-solid fa-arrow-trend-up text-[9px]"></i> +15,8%
+                                </span>
+                                <span class="text-[11px] text-slate-400">faturamento</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI 5: Despesas Totais -->
+                    <div class="kpi-card bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-500">Despesas Totais</span>
+                            <div class="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                                <i class="fa-solid fa-file-invoice-dollar text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h3 id="kpiDespesas" class="text-xl xl:text-lg 2xl:text-xl font-extrabold text-slate-900 tracking-tight">R$ 298.400</h3>
+                            <div class="flex items-center gap-1.5 mt-1.5">
+                                <span id="kpiDespesasTrend" class="inline-flex items-center gap-0.5 text-[11px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded-md">
+                                    <i class="fa-solid fa-arrow-trend-up text-[9px]"></i> +4,1%
+                                </span>
+                                <span class="text-[11px] text-slate-400">custos fixos</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI 6: Lucro Líquido -->
+                    <div class="kpi-card bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-4 border border-slate-700 shadow-sm text-white flex flex-col justify-between">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-300">Lucro Líquido</span>
+                            <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+                                <i class="fa-solid fa-chart-line text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h3 id="kpiLucro" class="text-xl xl:text-lg 2xl:text-xl font-extrabold text-white tracking-tight">R$ 187.500</h3>
+                            <div class="flex items-center gap-1.5 mt-1.5">
+                                <span id="kpiLucroTrend" class="inline-flex items-center gap-0.5 text-[11px] font-bold text-emerald-400 bg-emerald-500/20 px-1.5 py-0.5 rounded-md">
+                                    Margem 38,6%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                </section>
+
+                <!-- ============================================================= -->
+                <!-- 2. SEÇÃO DE GRÁFICOS — LINHA 1 (BAR CHART + LINE CHART)       -->
+                <!-- ============================================================= -->
+                <section aria-label="Análise de Vendas e Evolução" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    
+                    <!-- Gráfico 1: Gráfico de Barras (Bar Chart) -->
+                    <div class="lg:col-span-6 bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs flex flex-col">
+                        <div class="flex items-start justify-between gap-2 mb-4">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-xs bg-indigo-600"></span>
+                                    <h3 class="text-sm font-bold text-slate-800">Comparativo Mensal: Vendas vs. Novos Cadastros</h3>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-0.5">Volume de pedidos fechados comparado à aquisição de clientes</p>
+                            </div>
+                            <span class="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600">Barras</span>
+                        </div>
+                        <div class="chart-wrapper flex-1">
+                            <canvas id="barChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico 2: Gráfico de Linhas (Line Chart) -->
+                    <div class="lg:col-span-6 bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs flex flex-col">
+                        <div class="flex items-start justify-between gap-2 mb-4">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-xs bg-emerald-500"></span>
+                                    <h3 class="text-sm font-bold text-slate-800">Evolução das Vendas e Receitas ao Longo do Tempo</h3>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-0.5">Trajetória de faturamento realizado vs. projetado (em R$ mil)</p>
+                            </div>
+                            <span class="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600">Linhas</span>
+                        </div>
+                        <div class="chart-wrapper flex-1">
+                            <canvas id="lineChart"></canvas>
+                        </div>
+                    </div>
+
+                </section>
+
+                <!-- ============================================================= -->
+                <!-- 3. SEÇÃO DE GRÁFICOS — LINHA 2 (PIE, DOUGHNUT E GAUGE)        -->
+                <!-- ============================================================= -->
+                <section aria-label="Distribuições e Metas" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-6">
+                    
+                    <!-- Gráfico 3: Gráfico de Pizza (Pie Chart) -->
+                    <div class="xl:col-span-4 bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs flex flex-col">
+                        <div class="flex items-start justify-between gap-2 mb-3">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800">Distribuição de Despesas por Categoria</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">Participação percentual nos custos totais</p>
+                            </div>
+                            <span class="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600">Pizza</span>
+                        </div>
+                        <div class="chart-wrapper flex-1">
+                            <canvas id="pieChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico 4: Gráfico de Rosca (Doughnut Chart) -->
+                    <div class="xl:col-span-4 bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs flex flex-col">
+                        <div class="flex items-start justify-between gap-2 mb-3">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800">Proporção de Clientes por Situação</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">Segmentação da base ativa de clientes</p>
+                            </div>
+                            <span class="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600">Rosca</span>
+                        </div>
+                        <div class="chart-wrapper flex-1">
+                            <canvas id="doughnutChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico 7: Gráfico de Medidor (Gauge Chart) -->
+                    <div class="md:col-span-2 xl:col-span-4 bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+                        <div class="flex items-start justify-between gap-2 mb-2">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800">Percentual de Metas Alcançadas</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">Atingimento consolidado da meta corporativa</p>
+                            </div>
+                            <span class="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700">Medidor</span>
+                        </div>
+                        
+                        <div class="chart-wrapper-gauge my-auto">
+                            <canvas id="gaugeChart"></canvas>
+                            <!-- Indicador Central Sobreposto -->
+                            <div class="absolute bottom-7 flex flex-col items-center text-center pointer-events-none">
+                                <span id="gaugeValueText" class="text-3xl font-extrabold text-slate-900 tracking-tight">84,5%</span>
+                                <span id="gaugeStatusText" class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full mt-1">Excelente Desempenho</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 text-center">
+                            <div class="bg-slate-50 rounded-xl p-2">
+                                <span class="text-[11px] text-slate-500 block">Realizado</span>
+                                <span id="gaugeRealizado" class="text-xs font-bold text-slate-800">R$ 485.900</span>
+                            </div>
+                            <div class="bg-slate-50 rounded-xl p-2">
+                                <span class="text-[11px] text-slate-500 block">Meta Alvo</span>
+                                <span id="gaugeMetaAlvo" class="text-xs font-bold text-indigo-600">R$ 575.000</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </section>
+
+                <!-- ============================================================= -->
+                <!-- 4. SEÇÃO DE GRÁFICOS — LINHA 3 (AREA, HORIZONTAL BAR, STACKED)-->
+                <!-- ============================================================= -->
+                <section aria-label="Crescimento, Equipe e Fluxo Financeiro" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    
+                    <!-- Gráfico 5: Gráfico de Área (Area Chart) -->
+                    <div class="lg:col-span-4 bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs flex flex-col">
+                        <div class="flex items-start justify-between gap-2 mb-4">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800">Crescimento de Receita Líquida</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">Variação acumulada de receita nos meses</p>
+                            </div>
+                            <span class="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600">Área</span>
+                        </div>
+                        <div class="chart-wrapper flex-1">
+                            <canvas id="areaChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico 6: Gráfico de Barras Horizontais (Horizontal Bar Chart) -->
+                    <div class="lg:col-span-4 bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs flex flex-col">
+                        <div class="flex items-start justify-between gap-2 mb-4">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800">Desempenho por Consultor Comercial</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">Ranking de vendas fechadas (em R$ mil)</p>
+                            </div>
+                            <span class="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600">Horizontal</span>
+                        </div>
+                        <div class="chart-wrapper flex-1">
+                            <canvas id="horizontalBarChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico 8: Gráfico de Barras Empilhadas (Stacked Bar Chart) -->
+                    <div class="lg:col-span-4 bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs flex flex-col">
+                        <div class="flex items-start justify-between gap-2 mb-4">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800">Receitas vs. Despesas por Categoria</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">Composição financeira comparativa trimestral</p>
+                            </div>
+                            <span class="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600">Empilhadas</span>
+                        </div>
+                        <div class="chart-wrapper flex-1">
+                            <canvas id="stackedBarChart"></canvas>
+                        </div>
+                    </div>
+
+                </section>
+
+                <!-- ============================================================= -->
+                <!-- 5. TABELA DE ÚLTIMAS MOVIMENTAÇÕES + ATIVIDADES RECENTES      -->
+                <!-- ============================================================= -->
+                <section aria-label="Movimentações e Atividades" class="grid grid-cols-1 xl:grid-cols-12 gap-6 pb-6">
+                    
+                    <!-- Tabela de Últimas Movimentações (8 colunas) -->
+                    <div class="xl:col-span-8 bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden flex flex-col">
+                        <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800">Últimas Movimentações Financeiras</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">Registro recente de faturamentos, pagamentos e lançamentos</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <select id="statusFilter" onchange="filterTransactionsTable()" aria-label="Filtrar por status" class="text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+                                    <option value="ALL">Todos os Status</option>
+                                    <option value="Pago">Pago</option>
+                                    <option value="Pendente">Pendente</option>
+                                    <option value="Cancelado">Cancelado</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto flex-1">
+                            <table class="w-full text-left border-collapse" id="transactionsTable">
+                                <thead>
+                                    <tr class="bg-slate-50/80 border-b border-slate-200/70 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                                        <th class="py-3.5 px-4">ID Transação</th>
+                                        <th class="py-3.5 px-4">Cliente / Descrição</th>
+                                        <th class="py-3.5 px-4">Categoria</th>
+                                        <th class="py-3.5 px-4">Data</th>
+                                        <th class="py-3.5 px-4 text-right">Valor (R$)</th>
+                                        <th class="py-3.5 px-4 text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 text-xs" id="transactionsBody">
+                                    <tr class="hover:bg-slate-50/80 transition-colors" data-status="Pago">
+                                        <td class="py-3.5 px-4 font-mono font-semibold text-indigo-600">#TRX-9482</td>
+                                        <td class="py-3.5 px-4">
+                                            <p class="font-semibold text-slate-800">TechSolutions Brasil S.A.</p>
+                                            <p class="text-[11px] text-slate-400">Licenciamento Anual ERP Cloud</p>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-600">Receita Software</td>
+                                        <td class="py-3.5 px-4 text-slate-500">23/11/2026</td>
+                                        <td class="py-3.5 px-4 text-right font-bold text-emerald-600">+ R$ 42.800,00</td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Pago
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50/80 transition-colors" data-status="Pago">
+                                        <td class="py-3.5 px-4 font-mono font-semibold text-indigo-600">#TRX-9481</td>
+                                        <td class="py-3.5 px-4">
+                                            <p class="font-semibold text-slate-800">Grupo Logística Sul</p>
+                                            <p class="text-[11px] text-slate-400">Implantação Módulo Fiscal</p>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-600">Consultoria</td>
+                                        <td class="py-3.5 px-4 text-slate-500">22/11/2026</td>
+                                        <td class="py-3.5 px-4 text-right font-bold text-emerald-600">+ R$ 18.500,00</td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Pago
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50/80 transition-colors" data-status="Pendente">
+                                        <td class="py-3.5 px-4 font-mono font-semibold text-indigo-600">#TRX-9480</td>
+                                        <td class="py-3.5 px-4">
+                                            <p class="font-semibold text-slate-800">AWS Cloud Services</p>
+                                            <p class="text-[11px] text-slate-400">Infraestrutura Servidores Dedicados</p>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-600">Infraestrutura</td>
+                                        <td class="py-3.5 px-4 text-slate-500">21/11/2026</td>
+                                        <td class="py-3.5 px-4 text-right font-bold text-slate-700">- R$ 14.320,00</td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/60">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pendente
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50/80 transition-colors" data-status="Pago">
+                                        <td class="py-3.5 px-4 font-mono font-semibold text-indigo-600">#TRX-9479</td>
+                                        <td class="py-3.5 px-4">
+                                            <p class="font-semibold text-slate-800">Construtora Horizonte Ltda</p>
+                                            <p class="text-[11px] text-slate-400">Pacote 45 Usuários Corporativos</p>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-600">Assinatura SaaS</td>
+                                        <td class="py-3.5 px-4 text-slate-500">20/11/2026</td>
+                                        <td class="py-3.5 px-4 text-right font-bold text-emerald-600">+ R$ 27.900,00</td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Pago
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50/80 transition-colors" data-status="Cancelado">
+                                        <td class="py-3.5 px-4 font-mono font-semibold text-indigo-600">#TRX-9478</td>
+                                        <td class="py-3.5 px-4">
+                                            <p class="font-semibold text-slate-800">Comercial Varejo Express</p>
+                                            <p class="text-[11px] text-slate-400">Pedido duplicado estornado</p>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-600">Vendas Diretas</td>
+                                        <td class="py-3.5 px-4 text-slate-500">19/11/2026</td>
+                                        <td class="py-3.5 px-4 text-right font-bold text-rose-600">R$ 6.450,00</td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/60">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Cancelado
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Atividades Recentes (4 colunas) -->
+                    <div class="xl:col-span-4 bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs flex flex-col">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800">Atividades Recentes</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">Linha do tempo operacional do sistema</p>
+                            </div>
+                            <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                        </div>
+
+                        <!-- Timeline -->
+                        <div class="relative pl-6 space-y-5 before:content-[''] before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 flex-1">
+                            
+                            <!-- Item 1 -->
+                            <div class="relative">
+                                <span class="absolute -left-6 w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 border-2 border-white flex items-center justify-center shadow-2xs">
+                                    <i class="fa-solid fa-check text-[10px]"></i>
+                                </span>
+                                <div class="bg-slate-50/80 rounded-xl p-3 border border-slate-100">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <p class="text-xs font-bold text-slate-800">Venda Corporativa Aprovada</p>
+                                        <span class="text-[10px] font-medium text-slate-400">10:25</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-600 mt-1">Contrato #9482 fechado com <strong class="text-slate-700">TechSolutions Brasil</strong> no valor de R$ 42.800.</p>
+                                </div>
+                            </div>
+
+                            <!-- Item 2 -->
+                            <div class="relative">
+                                <span class="absolute -left-6 w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 border-2 border-white flex items-center justify-center shadow-2xs">
+                                    <i class="fa-solid fa-user-plus text-[10px]"></i>
+                                </span>
+                                <div class="bg-slate-50/80 rounded-xl p-3 border border-slate-100">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <p class="text-xs font-bold text-slate-800">Novo Cliente VIP Cadastrado</p>
+                                        <span class="text-[10px] font-medium text-slate-400">09:40</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-600 mt-1"><strong class="text-slate-700">Indústrias Metalúrgicas Alfa</strong> adicionada pela consultora Mariana Costa.</p>
+                                </div>
+                            </div>
+
+                            <!-- Item 3 -->
+                            <div class="relative">
+                                <span class="absolute -left-6 w-6 h-6 rounded-full bg-amber-100 text-amber-600 border-2 border-white flex items-center justify-center shadow-2xs">
+                                    <i class="fa-solid fa-bullseye text-[10px]"></i>
+                                </span>
+                                <div class="bg-slate-50/80 rounded-xl p-3 border border-slate-100">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <p class="text-xs font-bold text-slate-800">Meta Departamental Batida</p>
+                                        <span class="text-[10px] font-medium text-slate-400">Ontem</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-600 mt-1">Departamento Comercial Sul atingiu 112% da cota de vendas.</p>
+                                </div>
+                            </div>
+
+                            <!-- Item 4 -->
+                            <div class="relative">
+                                <span class="absolute -left-6 w-6 h-6 rounded-full bg-violet-100 text-violet-600 border-2 border-white flex items-center justify-center shadow-2xs">
+                                    <i class="fa-solid fa-file-pdf text-[10px]"></i>
+                                </span>
+                                <div class="bg-slate-50/80 rounded-xl p-3 border border-slate-100">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <p class="text-xs font-bold text-slate-800">Relatório Gerencial Emitido</p>
+                                        <span class="text-[10px] font-medium text-slate-400">Ontem</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-600 mt-1">Balanço Patrimonial e Fluxo de Caixa exportados por Ricardo Mendes.</p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Toast de Feedback (Substitui alert()) -->
+    <div id="toastNotification" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl border border-slate-700 flex items-center gap-3 text-xs font-medium">
+            <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+            <span id="toastMessage">Ação concluída com sucesso!</span>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- SCRIPTS DE DADOS, INTERATIVIDADE E INICIALIZAÇÃO DOS 8 GRÁFICOS       -->
+    <!-- ===================================================================== -->
+    <script>
+        // Registrar plugin DataLabels globalmente e desativar por padrão (ativaremos onde desejado)
+        Chart.register(ChartDataLabels);
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.color = '#64748B';
+        Chart.defaults.plugins.datalabels.display = false;
+
+        // =====================================================================
+        // BASE DE DADOS FICTÍCIA POR PERÍODO (30 DIAS, TRIMESTRE, ANO)
+        // =====================================================================
+        const dashboardDatasets = {
+            '30d': {
+                label: 'Últimos 30 dias',
+                kpis: {
+                    clientes: '2.845', clientesTrend: '+12,4%',
+                    funcionarios: '148', funcionariosTrend: '+6 novos',
+                    vendas: '1.420', vendasTrend: '+18,2%',
+                    receita: 'R$ 485.900', receitaTrend: '+15,8%',
+                    despesas: 'R$ 298.400', despesasTrend: '+4,1%',
+                    lucro: 'R$ 187.500', lucroTrend: 'Margem 38,6%'
+                },
+                bar: {
+                    labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
+                    vendas: [310, 345, 368, 397],
+                    cadastros: [140, 165, 182, 210]
+                },
+                line: {
+                    labels: ['01/11', '05/11', '10/11', '15/11', '20/11', '25/11', '30/11'],
+                    realizado: [58, 64, 71, 68, 79, 86, 95],
+                    projetado: [55, 60, 65, 70, 75, 80, 88]
+                },
+                pie: [34, 16, 28, 12, 10], // Operacional, Marketing, Folha, Impostos, Infraestrutura
+                doughnut: [1680, 520, 235, 410], // Ativos, Novos, Inativos, VIP
+                gauge: { percent: 84.5, status: 'Excelente Desempenho', realizado: 'R$ 485.900', alvo: 'R$ 575.000' },
+                area: {
+                    labels: ['Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov'],
+                    values: [340, 365, 358, 412, 448, 485.9]
+                },
+                horizontalBar: [138, 124, 112, 98, 86],
+                stacked: {
+                    labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
+                    receitaRecorrente: [72, 78, 84, 92],
+                    receitaServicos: [38, 42, 46, 51],
+                    despesasOperacionais: [68, 71, 74, 79]
+                }
+            },
+            'quarter': {
+                label: 'Este Trimestre',
+                kpis: {
+                    clientes: '3.120', clientesTrend: '+19,1%',
+                    funcionarios: '154', funcionariosTrend: '+12 novos',
+                    vendas: '4.290', vendasTrend: '+22,5%',
+                    receita: 'R$ 1.460.000', receitaTrend: '+21,4%',
+                    despesas: 'R$ 865.200', despesasTrend: '+6,3%',
+                    lucro: 'R$ 594.800', lucroTrend: 'Margem 40,7%'
+                },
+                bar: {
+                    labels: ['Setembro', 'Outubro', 'Novembro'],
+                    vendas: [1280, 1430, 1580],
+                    cadastros: [510, 590, 680]
+                },
+                line: {
+                    labels: ['Set S1', 'Set S3', 'Out S1', 'Out S3', 'Nov S1', 'Nov S3'],
+                    realizado: [210, 228, 242, 255, 278, 296],
+                    projetado: [200, 215, 230, 245, 260, 275]
+                },
+                pie: [31, 18, 29, 13, 9],
+                doughnut: [1890, 610, 200, 420],
+                gauge: { percent: 91.2, status: 'Meta Praticamente Batida', realizado: 'R$ 1.460.000', alvo: 'R$ 1.600.000' },
+                area: {
+                    labels: ['Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov'],
+                    values: [390, 415, 430, 452, 488, 520]
+                },
+                horizontalBar: [410, 385, 342, 298, 265],
+                stacked: {
+                    labels: ['Setembro', 'Outubro', 'Novembro'],
+                    receitaRecorrente: [290, 315, 345],
+                    receitaServicos: [162, 173, 195],
+                    despesasOperacionais: [275, 288, 302]
+                }
+            },
+            'year': {
+                label: 'Este Ano (2026)',
+                kpis: {
+                    clientes: '4.690', clientesTrend: '+34,8%',
+                    funcionarios: '162', funcionariosTrend: '+24 novos',
+                    vendas: '16.840', vendasTrend: '+28,9%',
+                    receita: 'R$ 5.840.000', receitaTrend: '+31,2%',
+                    despesas: 'R$ 3.410.000', despesasTrend: '+9,8%',
+                    lucro: 'R$ 2.430.000', lucroTrend: 'Margem 41,6%'
+                },
+                bar: {
+                    labels: ['1º Tri', '2º Tri', '3º Tri', '4º Tri'],
+                    vendas: [3650, 4020, 4410, 4760],
+                    cadastros: [1120, 1290, 1450, 1680]
+                },
+                line: {
+                    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov'],
+                    realizado: [410, 435, 460, 452, 490, 515, 530, 558, 590, 625, 675],
+                    projetado: [400, 420, 440, 460, 480, 500, 520, 540, 560, 585, 610]
+                },
+                pie: [32, 15, 30, 14, 9],
+                doughnut: [2850, 940, 310, 590],
+                gauge: { percent: 97.3, status: 'Recorde Histórico Anual', realizado: 'R$ 5.840.000', alvo: 'R$ 6.000.000' },
+                area: {
+                    labels: ['Jan', 'Mar', 'Mai', 'Jul', 'Set', 'Nov'],
+                    values: [410, 460, 490, 530, 590, 675]
+                },
+                horizontalBar: [1580, 1420, 1290, 1140, 980],
+                stacked: {
+                    labels: ['1º Tri', '2º Tri', '3º Tri', '4º Tri'],
+                    receitaRecorrente: [820, 910, 1020, 1150],
+                    receitaServicos: [485, 510, 560, 610],
+                    despesasOperacionais: [790, 830, 875, 915]
+                }
+            }
+        };
+
+        // Instâncias globais dos 8 gráficos
+        let charts = {};
+
+        // =====================================================================
+        // INICIALIZAÇÃO DOS 8 GRÁFICOS OBRIGATÓRIOS
+        // =====================================================================
+        function initCharts() {
+            const data = dashboardDatasets['30d'];
+
+            // 1. GRÁFICO DE BARRAS (Bar Chart)
+            const ctxBar = document.getElementById('barChart').getContext('2d');
+            charts.bar = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: data.bar.labels,
+                    datasets: [
+                        {
+                            label: 'Vendas Realizadas',
+                            data: data.bar.vendas,
+                            backgroundColor: '#4F46E5',
+                            borderRadius: 6,
+                            barPercentage: 0.65
+                        },
+                        {
+                            label: 'Novos Cadastros',
+                            data: data.bar.cadastros,
+                            backgroundColor: '#38BDF8',
+                            borderRadius: 6,
+                            barPercentage: 0.65
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11, weight: '600' } } },
+                        datalabels: {
+                            display: true,
+                            anchor: 'end',
+                            align: 'top',
+                            offset: -2,
+                            color: '#475569',
+                            font: { size: 10, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#F1F5F9' }, border: { display: false } },
+                        x: { grid: { display: false }, border: { display: false } }
+                    }
+                }
+            });
+
+            // 2. GRÁFICO DE LINHAS (Line Chart)
+            const ctxLine = document.getElementById('lineChart').getContext('2d');
+            charts.line = new Chart(ctxLine, {
+                type: 'line',
+                data: {
+                    labels: data.line.labels,
+                    datasets: [
+                        {
+                            label: 'Receita Realizada (R$ mil)',
+                            data: data.line.realizado,
+                            borderColor: '#10B981',
+                            backgroundColor: '#10B981',
+                            borderWidth: 3,
+                            tension: 0.35,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: 'Meta Projetada (R$ mil)',
+                            data: data.line.projetado,
+                            borderColor: '#94A3B8',
+                            backgroundColor: '#94A3B8',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            tension: 0.35,
+                            pointRadius: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11, weight: '600' } } },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.dataset.label}: R$ ${ctx.parsed.y} mil`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: '#F1F5F9' },
+                            border: { display: false },
+                            ticks: { callback: (v) => 'R$ ' + v + 'k' }
+                        },
+                        x: { grid: { display: false }, border: { display: false } }
+                    }
+                }
+            });
+
+            // 3. GRÁFICO DE PIZZA (Pie Chart)
+            const ctxPie = document.getElementById('pieChart').getContext('2d');
+            charts.pie = new Chart(ctxPie, {
+                type: 'pie',
+                data: {
+                    labels: ['Operacional', 'Marketing', 'Folha Pgto', 'Impostos', 'Infraestrutura'],
+                    datasets: [{
+                        data: data.pie,
+                        backgroundColor: ['#4F46E5', '#06B6D4', '#8B5CF6', '#F59E0B', '#EC4899'],
+                        borderWidth: 2,
+                        borderColor: '#FFFFFF'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11 } } },
+                        datalabels: {
+                            display: true,
+                            color: '#FFFFFF',
+                            font: { weight: 'bold', size: 11 },
+                            formatter: (val) => val + '%'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ` ${ctx.label}: ${ctx.parsed}% das despesas`
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 4. GRÁFICO DE ROSCA (Doughnut Chart)
+            const ctxDoughnut = document.getElementById('doughnutChart').getContext('2d');
+            charts.doughnut = new Chart(ctxDoughnut, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Ativos', 'Novos', 'Inativos', 'VIP Enterprise'],
+                    datasets: [{
+                        data: data.doughnut,
+                        backgroundColor: ['#10B981', '#3B82F6', '#CBD5E1', '#6366F1'],
+                        borderWidth: 2,
+                        borderColor: '#FFFFFF',
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '64%',
+                    plugins: {
+                        legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11 } } },
+                        datalabels: {
+                            display: true,
+                            color: '#1E293B',
+                            backgroundColor: 'rgba(255,255,255,0.85)',
+                            borderRadius: 4,
+                            padding: 3,
+                            font: { weight: 'bold', size: 10 }
+                        }
+                    }
+                }
+            });
+
+            // 7. GRÁFICO DE MEDIDOR (Gauge Chart Semicircular)
+            const ctxGauge = document.getElementById('gaugeChart').getContext('2d');
+            charts.gauge = new Chart(ctxGauge, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Meta Alcançada', 'Restante'],
+                    datasets: [{
+                        data: [data.gauge.percent, 100 - data.gauge.percent],
+                        backgroundColor: ['#4F46E5', '#E2E8F0'],
+                        borderWidth: 0,
+                        borderRadius: [10, 0]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    rotation: -90,
+                    circumference: 180,
+                    cutout: '76%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ` ${ctx.label}: ${ctx.parsed.toFixed(1)}%`
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 5. GRÁFICO DE ÁREA (Area Chart com gradiente)
+            const ctxArea = document.getElementById('areaChart').getContext('2d');
+            const areaGradient = ctxArea.createLinearGradient(0, 0, 0, 260);
+            areaGradient.addColorStop(0, 'rgba(79, 70, 229, 0.35)');
+            areaGradient.addColorStop(1, 'rgba(79, 70, 229, 0.01)');
+
+            charts.area = new Chart(ctxArea, {
+                type: 'line',
+                data: {
+                    labels: data.area.labels,
+                    datasets: [{
+                        label: 'Receita Mensal (R$ mil)',
+                        data: data.area.values,
+                        borderColor: '#4F46E5',
+                        backgroundColor: areaGradient,
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#4F46E5',
+                        pointRadius: 3.5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11 } } },
+                        datalabels: {
+                            display: true,
+                            align: 'top',
+                            color: '#4F46E5',
+                            font: { size: 10, weight: 'bold' },
+                            formatter: (v) => 'R$' + v + 'k'
+                        }
+                    },
+                    scales: {
+                        y: { grid: { color: '#F1F5F9' }, border: { display: false }, ticks: { callback: (v) => 'R$' + v + 'k' } },
+                        x: { grid: { display: false }, border: { display: false } }
+                    }
+                }
+            });
+
+            // 6. GRÁFICO DE BARRAS HORIZONTAIS (Horizontal Bar Chart)
+            const ctxHorizontal = document.getElementById('horizontalBarChart').getContext('2d');
+            charts.horizontal = new Chart(ctxHorizontal, {
+                type: 'bar',
+                data: {
+                    labels: ['Mariana Costa', 'Carlos Eduardo', 'Fernanda Lima', 'Rafael Souza', 'Juliana Alves'],
+                    datasets: [{
+                        label: 'Vendas (R$ mil)',
+                        data: data.horizontalBar,
+                        backgroundColor: ['#10B981', '#3B82F6', '#6366F1', '#8B5CF6', '#06B6D4'],
+                        borderRadius: 6,
+                        barPercentage: 0.65
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        datalabels: {
+                            display: true,
+                            anchor: 'end',
+                            align: 'right',
+                            color: '#334155',
+                            font: { size: 10, weight: 'bold' },
+                            formatter: (v) => 'R$ ' + v + 'k'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            suggestedMax: 165,
+                            grid: { color: '#F1F5F9' },
+                            border: { display: false },
+                            ticks: { callback: (v) => 'R$' + v + 'k' }
+                        },
+                        y: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 11, weight: '600' } } }
+                    }
+                }
+            });
+
+            // 8. GRÁFICO DE BARRAS EMPILHADAS (Stacked Bar Chart)
+            const ctxStacked = document.getElementById('stackedBarChart').getContext('2d');
+            charts.stacked = new Chart(ctxStacked, {
+                type: 'bar',
+                data: {
+                    labels: data.stacked.labels,
+                    datasets: [
+                        {
+                            label: 'Receita SaaS',
+                            data: data.stacked.receitaRecorrente,
+                            backgroundColor: '#10B981',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Serviços & Implantação',
+                            data: data.stacked.receitaServicos,
+                            backgroundColor: '#3B82F6',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Despesas Operacionais',
+                            data: data.stacked.despesasOperacionais,
+                            backgroundColor: '#F43F5E',
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8, font: { size: 10, weight: '600' } } },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ` ${ctx.dataset.label}: R$ ${ctx.parsed.y} mil`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { stacked: true, grid: { display: false }, border: { display: false } },
+                        y: {
+                            stacked: true,
+                            grid: { color: '#F1F5F9' },
+                            border: { display: false },
+                            ticks: { callback: (v) => 'R$' + v + 'k' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // =====================================================================
+        // ATUALIZAÇÃO DINÂMICA AO TROCAR O FILTRO DE PERÍODO
+        // =====================================================================
+        function updateDashboardPeriod(periodKey) {
+            const data = dashboardDatasets[periodKey];
+            if (!data) return;
+
+            // Atualiza badge de período
+            document.getElementById('periodBadge').innerHTML = `
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                Período: <strong class="text-slate-800">${data.label}</strong>
+            `;
+
+            // Atualiza os 6 KPIs
+            document.getElementById('kpiClientes').textContent = data.kpis.clientes;
+            document.getElementById('kpiClientesTrend').innerHTML = `<i class="fa-solid fa-arrow-trend-up text-[9px]"></i> ${data.kpis.clientesTrend}`;
+            
+            document.getElementById('kpiFuncionarios').textContent = data.kpis.funcionarios;
+            document.getElementById('kpiFuncionariosTrend').innerHTML = `<i class="fa-solid fa-plus text-[9px]"></i> ${data.kpis.funcionariosTrend}`;
+            
+            document.getElementById('kpiVendas').textContent = data.kpis.vendas;
+            document.getElementById('kpiVendasTrend').innerHTML = `<i class="fa-solid fa-arrow-trend-up text-[9px]"></i> ${data.kpis.vendasTrend}`;
+            
+            document.getElementById('kpiReceita').textContent = data.kpis.receita;
+            document.getElementById('kpiReceitaTrend').innerHTML = `<i class="fa-solid fa-arrow-trend-up text-[9px]"></i> ${data.kpis.receitaTrend}`;
+            
+            document.getElementById('kpiDespesas').textContent = data.kpis.despesas;
+            document.getElementById('kpiDespesasTrend').innerHTML = `<i class="fa-solid fa-arrow-trend-up text-[9px]"></i> ${data.kpis.despesasTrend}`;
+            
+            document.getElementById('kpiLucro').textContent = data.kpis.lucro;
+            document.getElementById('kpiLucroTrend').textContent = data.kpis.lucroTrend;
+
+            // 1. Atualiza Bar Chart
+            charts.bar.data.labels = data.bar.labels;
+            charts.bar.data.datasets[0].data = data.bar.vendas;
+            charts.bar.data.datasets[1].data = data.bar.cadastros;
+            charts.bar.update();
+
+            // 2. Atualiza Line Chart
+            charts.line.data.labels = data.line.labels;
+            charts.line.data.datasets[0].data = data.line.realizado;
+            charts.line.data.datasets[1].data = data.line.projetado;
+            charts.line.update();
+
+            // 3. Atualiza Pie Chart
+            charts.pie.data.datasets[0].data = data.pie;
+            charts.pie.update();
+
+            // 4. Atualiza Doughnut Chart
+            charts.doughnut.data.datasets[0].data = data.doughnut;
+            charts.doughnut.update();
+
+            // 7. Atualiza Gauge Chart
+            charts.gauge.data.datasets[0].data = [data.gauge.percent, 100 - data.gauge.percent];
+            charts.gauge.update();
+            const formattedPercent = data.gauge.percent.toFixed(1).replace('.', ',') + '%';
+            document.getElementById('gaugeValueText').textContent = formattedPercent;
+            document.getElementById('gaugeStatusText').textContent = data.gauge.status;
+            document.getElementById('gaugeRealizado').textContent = data.gauge.realizado;
+            document.getElementById('gaugeMetaAlvo').textContent = data.gauge.alvo;
+            document.getElementById('sidebarMetaBadge').textContent = formattedPercent;
+            document.getElementById('sidebarMetaBar').style.width = data.gauge.percent + '%';
+
+            // 5. Atualiza Area Chart
+            charts.area.data.labels = data.area.labels;
+            charts.area.data.datasets[0].data = data.area.values;
+            charts.area.update();
+
+            // 6. Atualiza Horizontal Bar Chart
+            const maxHoriz = Math.max(...data.horizontalBar);
+            charts.horizontal.options.scales.x.suggestedMax = Math.ceil(maxHoriz * 1.18);
+            charts.horizontal.data.datasets[0].data = data.horizontalBar;
+            charts.horizontal.update();
+
+            // 8. Atualiza Stacked Bar Chart
+            charts.stacked.data.labels = data.stacked.labels;
+            charts.stacked.data.datasets[0].data = data.stacked.receitaRecorrente;
+            charts.stacked.data.datasets[1].data = data.stacked.receitaServicos;
+            charts.stacked.data.datasets[2].data = data.stacked.despesasOperacionais;
+            charts.stacked.update();
+
+            showToast(`Indicadores atualizados para: ${data.label}`);
+        }
+
+        // =====================================================================
+        // INTERAÇÕES DE UI (SIDEBAR MOBILE, NOTIFICAÇÕES, FILTRO DE TABELA)
+        // =====================================================================
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        function setActiveNav(element, subtitle) {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('bg-indigo-600/15', 'text-indigo-400', 'font-semibold', 'border', 'border-indigo-500/20');
+                item.classList.add('text-slate-300');
+            });
+            element.classList.remove('text-slate-300');
+            element.classList.add('bg-indigo-600/15', 'text-indigo-400', 'font-semibold', 'border', 'border-indigo-500/20');
+            
+            document.getElementById('pageSubtitle').textContent = subtitle;
+            if (window.innerWidth < 1024) {
+                toggleSidebar();
+            }
+        }
+
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notifDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        function markAllNotificationsRead() {
+            document.getElementById('notifBadge').classList.add('hidden');
+            document.querySelectorAll('.unread-dot').forEach(dot => dot.remove());
+            showToast('Todas as notificações foram marcadas como lidas.');
+        }
+
+        // Fechar dropdown de notificações ao clicar fora
+        document.addEventListener('click', function(event) {
+            const btn = document.getElementById('notifButton');
+            const dropdown = document.getElementById('notifDropdown');
+            if (!btn.contains(event.target) && !dropdown.contains(event.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        // Filtro da Tabela de Movimentações (Busca + Status)
+        function filterTransactionsTable() {
+            const searchQuery = (document.getElementById('globalSearch')?.value || '').toLowerCase();
+            const statusValue = document.getElementById('statusFilter').value;
+            const rows = document.querySelectorAll('#transactionsBody tr');
+
+            rows.forEach(row => {
+                const rowText = row.textContent.toLowerCase();
+                const rowStatus = row.getAttribute('data-status');
+                const matchesSearch = rowText.includes(searchQuery);
+                const matchesStatus = statusValue === 'ALL' || rowStatus === statusValue;
+
+                row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+            });
+        }
+
+        function exportSummaryToast() {
+            const periodLabel = dashboardDatasets[document.getElementById('periodFilter').value].label;
+            showToast(`Relatório Executivo (${periodLabel}) preparado para download!`);
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toastNotification');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            
+            clearTimeout(window.toastTimer);
+            window.toastTimer = setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3200);
+        }
+
+        // Inicializar gráficos após o carregamento completo da janela
+        window.onload = function() {
+            initCharts();
+        };
+    </script>
+</body>
+</html>
